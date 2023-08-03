@@ -19,9 +19,13 @@ function createTextElement(text) {
 const Zitact = {
     createElement
 };
-const element = Zitact.createElement("div", {
-    id: "app"
-}, Zitact.createElement("a", null, "bar"), Zitact.createElement("b"));
+// const element = Zitact.createElement(
+//   "div",
+//   { id: "app" },
+//   Zitact.createElement("a", null, "bar"),
+//   Zitact.createElement("b")
+// );
+const element = div;
 console.log(element); // React.createElement('h1', {class: 'heading'}, React.createElement())
 
 //# sourceMappingURL=index.c36f364e.js.map
