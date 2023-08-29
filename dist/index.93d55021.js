@@ -23,73 +23,83 @@ function createTextElement(text) {
         }
     };
 }
-const el = {
-    type: "div",
-    props: {
-        className: "id",
-        children: [
-            {
-                type: "h1",
-                props: {
-                    children: [
-                        {
-                            type: "TEXT_ELEMENT",
-                            props: {
-                                nodeValue: "Hello World",
-                                children: []
-                            }
-                        }
-                    ]
-                }
-            },
-            {
-                type: "p",
-                props: {
-                    children: [
-                        {
-                            type: "TEXT_ELEMENT",
-                            props: {
-                                nodeValue: "lorem",
-                                children: []
-                            }
-                        }
-                    ]
-                }
-            }
-        ]
-    }
-};
-function render(element, container) {
-    const dom = element.type == "TEXT_ELEMENT" ? document.createTextNode("") : document.createElement(element.type);
+// to keep track of text unit of work
+let nextUnitOfWork = null;
+let wipTree = null;
+function createDOMNode(fiber) {
+    const dom = fiber.type == "TEXT_ELEMENT" ? document.createTextNode("") : document.createElement(fiber.type);
     //filering children from the props and assigning remaining to the dom
-    Object.keys(element.props).filter((key)=>key !== "children").forEach((name)=>dom[name] = element.props[name]);
-    /*
-    Recursiverly going through the childrren and appending to the parent container after finish of each 
-    children pass.
-    */ element.props.children.forEach((child)=>{
-        render(child, dom);
-    });
-    container.appendChild(dom);
+    Object.keys(fiber.props).filter((key)=>key !== "children").forEach((name)=>dom[name] = fiber.props[name]);
+    return dom;
+}
+function render(element, container) {
+    // TODO  set next unit of work
+    nextUnitOfWork = {
+        dom: container,
+        props: {
+            children: [
+                element
+            ]
+        }
+    };
+}
+/*
+regulary performs small units of work 
+*/ function workLooop(deadline) {
+    let shouldYeild = false;
+    while(nextUnitOfWork && !shouldYeild){
+        nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
+        shouldYeild = deadline.timeRemaining() < 1;
+    }
+    requestIdleCallback(workLooop);
+}
+/* request idle callback is like settimeout but we don't define when to run the code 
+instead browser runs the code passed into it when the browser is idle
+*/ requestIdleCallback(workLooop);
+function performUnitOfWork(fiber) {
+    if (!fiber.dom) fiber.dom = createDOMNode(fiber);
+    const elements = fiber.props.children;
+    let index = 0;
+    let prevSibling = null;
+    while(index < elements.lenth){
+        const element = elements[index];
+        const newFiber = {
+            type: element.type,
+            props: element.props,
+            parent: fiber,
+            dom: null
+        };
+        if (index === 0) fiber.child = newFiber;
+        else prevSibling.sibling = newFiber;
+        prevSibling = newFiber;
+        index++;
+    }
+    if (fiber.child) return fiber.child;
+    let nextFiber = fiber;
+    while(nextFiber){
+        if (nextFiber.sibling) return nextFiber.sibling;
+        nextFiber = nextFiber.parent;
+    }
 }
 /** @jsx Zitact.createElement */ const element = /*#__PURE__*/ Zitact.createElement("div", {
     className: "id",
     __source: {
         fileName: "index.jsx",
-        lineNumber: 95,
+        lineNumber: 122,
         columnNumber: 3
     },
     __self: this
 }, /*#__PURE__*/ Zitact.createElement("h1", {
     __source: {
         fileName: "index.jsx",
-        lineNumber: 96,
+        lineNumber: 123,
         columnNumber: 5
     },
     __self: this
 }, "Hello world"), /*#__PURE__*/ Zitact.createElement("p", {
     __source: {
         fileName: "index.jsx",
-        lineNumber: 97,
+        lineNumber: 124,
         columnNumber: 5
     },
     __self: this
